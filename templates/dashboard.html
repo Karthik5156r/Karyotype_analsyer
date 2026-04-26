@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-header welcome-header" style="background: linear-gradient(135deg, var(--accent-purple), var(--primary-dark)); padding: 40px; border-radius: var(--radius-lg); color: white; margin-bottom: 40px; box-shadow: var(--shadow-hover); position: relative; overflow: hidden;">
+    <div style="position: absolute; right: -20px; top: -50px; opacity: 0.15; transform: rotate(-15deg);">
+        <i class="fa-solid fa-dna" style="font-size: 250px;"></i>
+    </div>
+    <div class="welcome-text" style="position: relative; z-index: 2;">
+        <h2 style="color: white; font-size: 36px; margin-bottom: 12px; font-weight: 800;">Karyotype Analysis</h2>
+        <div style="margin-top: 25px;">
+            <a href="{{ url_for('upload') }}" class="btn-primary" style="background: white; color: var(--accent-purple); box-shadow: 0 4px 15px rgba(0,0,0,0.1); font-weight: 700; padding: 14px 28px; border-radius: 30px; transition: transform 0.3s;"><i class="fa-solid fa-cloud-arrow-up"></i> Start New Analysis</a>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Sequence -->
+<div class="stats-grid">
+    <div class="stat-card hover-lift primary-stat">
+        <div class="stat-icon-wrapper"><i class="fa-solid fa-file-waveform"></i></div>
+        <div class="stat-info">
+            <p>Total Reports</p>
+            <h3>{{ total }}</h3>
+        </div>
+    </div>
+    <div class="stat-card hover-lift green-stat">
+        <div class="stat-icon-wrapper"><i class="fa-solid fa-check-double"></i></div>
+        <div class="stat-info">
+            <p>Normal Cases</p>
+            <h3>{{ normal }}</h3>
+        </div>
+    </div>
+    <div class="stat-card hover-lift red-stat">
+        <div class="stat-icon-wrapper"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div class="stat-info">
+            <p>Abnormal Cases</p>
+            <h3>{{ abnormal }}</h3>
+        </div>
+    </div>
+</div>
+
+<div class="dashboard-advanced-grid">
+    <!-- Chart Overview -->
+    <div class="dashboard-card chart-container hover-lift">
+        <h3>Analysis Overview</h3>
+        <div class="chart-wrapper">
+            <canvas id="overviewChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Recent Reports -->
+    <div class="dashboard-card recent-container hover-lift">
+        <h3>Recent Reports</h3>
+        {% if recent %}
+        <div class="recent-list">
+            {% for r in recent %}
+            <div class="recent-item">
+                <div class="recent-avatar"><i class="fa-solid fa-user-injured"></i></div>
+                <div class="recent-details">
+                    <h4>{{ r[1] }}</h4>
+                    <span>{{ r[2] }} yrs | {% if r[4] == 'Normal' %}<b style="color:var(--color-green)">Normal</b>{% else %}<b style="color:var(--color-red)">Abnormal</b>{% endif %}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted">No recent reports found.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const ctx = document.getElementById('overviewChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Normal Cases', 'Abnormal Cases'],
+                datasets: [{
+                    data: [Number('{{ normal|default(0) }}'), Number('{{ abnormal|default(0) }}')],
+                    backgroundColor: ['#10b981', '#ef4444'],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
