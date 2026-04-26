@@ -103,12 +103,12 @@ nbformat==5.10.4
 nest-asyncio==1.6.0
 notebook==7.5.4
 notebook_shim==0.2.4
-numpy==1.23.5
+numpy==2.4.4
 opencv-python==4.13.0.92
 openpyxl==3.1.2
 overrides==7.7.0
 packaging==26.0
-pandas==1.5.3
+pandas==2.2.0
 pandocfilters==1.5.1
 parso==0.8.6
 pathspec==1.0.4
@@ -175,3 +175,5 @@ websocket-client==1.9.0
 Werkzeug==3.1.8
 whitenoise==6.6.0
 yarl==1.23.0
+setuptools
+wheel
