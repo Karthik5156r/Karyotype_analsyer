@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash-messages-container">
+      {% for category, message in messages %}
+        <div class="flash-toast flash-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<div class="dashboard-header reports-header" style="display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h2>Patient History</h2>
+        <p>Archive of all generated patient karyotype reports.</p>
+    </div>
+    <div class="header-actions">
+        <button type="submit" form="bulkDeleteForm" class="btn-primary bulk-delete-btn" id="bulkDeleteBtn" style="background: var(--color-red); display: none; margin-bottom: 0;" onclick="return confirm('Are you sure you want to delete selected reports?');">
+            <i class="fa-solid fa-trash-can"></i> Delete Selected (<span id="selectedCount">0</span>)
+        </button>
+    </div>
+</div>
+
+<form action="{{ url_for('delete_multiple') }}" method="POST" id="bulkDeleteForm">
+<div class="table-card hover-lift">
+    {% if reports %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th style="width: 50px;"><input type="checkbox" id="selectAll"></th>
+                <th>Patient Name</th>
+                <th>Age</th>
+                <th>Result</th>
+                <th>Image Preview</th>
+                <th class="actions-col">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for report in reports %}
+            <tr class="table-row" {% if report|length > 7 and report[7] %}data-pdf="{{ url_for('static', filename='reports/' + report[7]) }}" style="cursor: pointer;"{% endif %}>
+                <td onclick="event.stopPropagation();"><input type="checkbox" name="report_ids" value="{{ report[0] }}" class="report-checkbox"></td>
+                <td><div class="cell-primary">{{ report[1] }}</div><div class="cell-sub">ID: #{{ report[0] }}</div></td>
+                <td><span class="age-badge">{{ report[2] }}</span></td>
+                <td>
+                    <span class="status-pill {% if report[4] == 'Normal' %}pill-green{% else %}pill-red{% endif %}">
+                        {{ report[4] }}
+                    </span>
+                </td>
+                <td>
+                    {% if report[5] %}
+                    <div class="thumb-box">
+                        <img src="{{ url_for('static', filename='uploads/' + report[5]) }}" alt="Thumb">
+                    </div>
+                    {% else %}
+                    <span class="text-muted">None</span>
+                    {% endif %}
+                </td>
+                <td class="actions-col" onclick="event.stopPropagation();">
+                    {% if report|length > 7 and report[7] %}
+                    <button type="button" class="action-btn preview tooltip" title="Preview Report" data-pdfurl="{{ url_for('static', filename='reports/' + report[7]) }}" onclick="openPdfModal(this.dataset.pdfurl)">
+                        <i class="fa-solid fa-eye"></i>
+                    </button>
+                    <a href="{{ url_for('static', filename='reports/' + report[7]) }}" class="action-btn download tooltip btn-download" download data-file="{{ report[7] }}" title="Download Secure PDF" onclick="handleDownload(this)">
+                        <i class="fa-solid fa-download"></i>
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('delete', id=report[0]) }}" class="action-btn delete tooltip" title="Permanently Delete" onclick="return confirm('Permanently delete this case record?');">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-data">
+        <i class="fa-regular fa-folder-open"></i>
+        <h3>No Records Found</h3>
+        <p>Your history is currently empty.</p>
+    </div>
+    {% endif %}
+</div>
+</form>
+
+<!-- PDF Preview Modal -->
+<div id="pdfModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 style="margin: 0;">Report Preview</h3>
+            <div class="modal-actions">
+                <a id="modalDownloadBtn" href="#" class="btn-primary" download style="padding: 8px 16px; font-size: 14px;">
+                    <i class="fa-solid fa-download"></i> Download
+                </a>
+                <button class="close-modal" id="closeModalBtn" type="button"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        </div>
+        <div class="modal-body" style="padding: 0; background: #525659; line-height: 0;">
+            <iframe id="pdfIframe" src="" width="100%" height="600px" style="border: none; margin: 0; display: block;"></iframe>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const selectAll = document.getElementById('selectAll');
+        const checkboxes = document.querySelectorAll('.report-checkbox');
+        const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+        const selectedCount = document.getElementById('selectedCount');
+
+        function updateBulkDeleteBtn() {
+            const count = document.querySelectorAll('.report-checkbox:checked').length;
+            if(count > 0) {
+                bulkDeleteBtn.style.display = 'inline-flex';
+                selectedCount.textContent = count;
+            } else {
+                bulkDeleteBtn.style.display = 'none';
+                if(selectAll) selectAll.checked = false;
+            }
+        }
+
+        if(selectAll) {
+            selectAll.addEventListener('change', function() {
+                checkboxes.forEach(cb => cb.checked = this.checked);
+                updateBulkDeleteBtn();
+            });
+        }
+
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', updateBulkDeleteBtn);
+        });
+
+        // Row click for PDF Modal
+        document.querySelectorAll('.table-row[data-pdf]').forEach(row => {
+            row.addEventListener('click', function(e) {
+                // Ignore if clicked directly on a checkbox, button, or link
+                if(e.target.closest('input, button, a')) return;
+                openPdfModal(this.dataset.pdf);
+            });
+        });
+        
+        // Modal functionality
+        const modal = document.getElementById('pdfModal');
+        const closeBtn = document.getElementById('closeModalBtn');
+        
+        if (closeBtn) {
+            closeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                closePdfModal();
+            });
+        }
+        
+        // Close modal when clicking outside
+        window.addEventListener('click', (e) => {
+            if(e.target === modal) {
+                closePdfModal();
+            }
+        });
+
+        // Auto-dismiss flashes
+        setTimeout(() => {
+            const flashes = document.querySelectorAll('.flash-toast');
+            flashes.forEach(flash => {
+                flash.style.animation = 'fadeToastOut 0.5s forwards';
+                setTimeout(() => flash.remove(), 500);
+            });
+        }, 3500);
+    });
+
+    function openPdfModal(pdfUrl) {
+        document.getElementById('pdfIframe').src = pdfUrl;
+        document.getElementById('modalDownloadBtn').href = pdfUrl;
+        
+        const modal = document.getElementById('pdfModal');
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    }
+    
+    function closePdfModal() {
+        const modal = document.getElementById('pdfModal');
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+        
+        // Clear iframe source after animation
+        setTimeout(() => {
+            document.getElementById('pdfIframe').src = '';
+        }, 300);
+    }
+
+    function handleDownload(btn) {
+        // Prevent multiple clicks
+        if(btn.classList.contains('downloading')) return true;
+        
+        // Add downloading state
+        btn.classList.add('downloading');
+        let icon = btn.querySelector('i');
+        let originalClass = icon.className;
+        icon.className = 'fa-solid fa-spinner fa-spin';
+        
+        // Remove animation after 2.5 seconds assuming download starts
+        setTimeout(() => {
+            btn.classList.remove('downloading');
+            icon.className = originalClass;
+            // Optionally show a custom toast here that it downloaded!
+        }, 2500);
+        
+        return true; // allow default download behavior
+    }
+</script>
+{% endblock %}

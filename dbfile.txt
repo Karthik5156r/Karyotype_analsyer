@@ -1,0 +1,13 @@
+CREATE DATABASE karyotype_db;
+
+USE karyotype_db;
+
+CREATE TABLE reports (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    patient_name VARCHAR(100),
+    age INT,
+    chromosome_count INT,
+    result VARCHAR(100),
+    image VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="result-header">
+    <div class="result-title">
+        <i class="fa-solid fa-vial-circle-check title-icon"></i>
+        <div>
+            <h2>Analysis Complete</h2>
+            <p>Review the automated diagnostic results below.</p>
+        </div>
+    </div>
+</div>
+
+<div class="result-layout">
+    <!-- LEFT: Uploaded Image Preview -->
+    <div class="result-image-panel hover-lift glow-effect">
+        <div class="panel-header">
+            <h3>Original Image</h3>
+        </div>
+        <div class="image-box">
+            <img src="{{ url_for('static', filename='uploads/' + image_path) }}" alt="Analyzed Karyotype">
+        </div>
+    </div>
+
+    <!-- RIGHT: Cards -->
+    <div class="result-data-panel">
+        <div class="data-card blue-card fade-in-delay-1 hover-lift">
+            <div class="card-icon"><i class="fa-solid fa-layer-group"></i></div>
+            <div class="card-info">
+                <span>Total Chromosomes</span>
+                <h2>{{ count }} <small>Stated</small></h2>
+            </div>
+        </div>
+
+        <div class="data-card {% if result == 'Normal' %}green-card{% else %}red-card{% endif %} fade-in-delay-2 hover-lift">
+            <div class="card-icon">
+                {% if result == 'Normal' %}<i class="fa-solid fa-heart-pulse"></i>{% else %}<i class="fa-solid fa-triangle-exclamation"></i>{% endif %}
+            </div>
+            <div class="card-info">
+                <span>Diagnostic Result</span>
+                <h2>{{ result }}</h2>
+            </div>
+        </div>
+
+        <div class="data-card purple-card fade-in-delay-3 hover-lift">
+            <div class="card-icon"><i class="fa-solid fa-notes-medical"></i></div>
+            <div class="card-info">
+                <span>Condition</span>
+                <h4>{{ condition }}</h4>
+            </div>
+        </div>
+
+        <!-- Downloads and Minichart inside right panel -->
+        <div class="result-actions fade-in-delay-4">
+            <a href="{{ url_for('static', filename='reports/' + pdf_path) }}" class="btn-primary report-btn hover-lift glow-effect" download>
+                <i class="fa-solid fa-file-pdf"></i> Download PDF Report
+            </a>
+            
+            <div class="mini-chart-box">
+                <canvas id="resultMinichart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const ctx = document.getElementById('resultMinichart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Gr A', 'Gr B', 'Gr C', 'Gr D', 'Gr E', 'Gr F', 'Gr G', 'Sex'],
+            datasets: [{
+                label: 'Pairs',
+                data: [3, 2, 7, 3, 3, 2, 2, 1],
+                backgroundColor: 'rgba(44, 123, 229, 0.7)',
+                borderRadius: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { display: false } , x: { grid: { display: false } } }
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="upload-container">
+    <div class="upload-header">
+        <h2>Upload Karyotype Image</h2>
+        <p>Select or drag a patient's karyotype image to begin automated analysis.</p>
+    </div>
+
+    {% if error %}
+    <div style="background: var(--color-red-light); color: var(--color-red); padding: 15px; border-radius: var(--radius-md); text-align: center; margin-bottom: 20px; font-weight: 600; box-shadow: var(--shadow-soft);">
+        <i class="fa-solid fa-triangle-exclamation"></i> {{ error }}
+    </div>
+    {% endif %}
+
+    <form action="{{ url_for('upload') }}" method="POST" enctype="multipart/form-data" class="pure-upload-form">
+        <!-- Advanced Patient Data Section with Cards -->
+        <div class="upload-data-section">
+            <div class="section-label">Patient Information</div>
+            <div class="upload-meta">
+                <div class="input-light">
+                    <label for="name-input" class="input-field-label">
+                        <i class="fa-solid fa-user" style="color: #6d28d9;"></i> Patient Name
+                    </label>
+                    <input type="text" id="name-input" name="name" placeholder="Enter full name" required>
+                </div>
+                <div class="input-light">
+                    <label for="age-input" class="input-field-label">
+                        <i class="fa-solid fa-calendar" style="color: #6d28d9;"></i> Age
+                    </label>
+                    <input type="number" id="age-input" name="age" placeholder="Enter age in years" required min="0" max="150">
+                </div>
+                <div class="input-light">
+                    <label for="count-input" class="input-field-label">
+                        <i class="fa-solid fa-dna" style="color: #6d28d9;"></i> Expected Count
+                    </label>
+                    <input type="number" id="count-input" name="chromosome" placeholder="e.g., 46" required min="30" max="100">
+                </div>
+            </div>
+        </div>
+
+        <!-- Huge Centered Drag & Drop -->
+        <div class="drag-zone hover-lift glow-effect" id="drop-zone">
+            <div id="upload-placeholder">
+                <i class="fa-solid fa-cloud-arrow-up massive-icon"></i>
+                <h3>Drag & Drop or Browse Image</h3>
+                <p class="text-muted">Supports PNG, JPG, JPEG</p>
+                <label for="image" class="browse-btn">Browse Files</label>
+            </div>
+            <input type="file" id="image" name="image" accept=".png, .jpg, .jpeg" required class="hidden-file-input">
+            
+            <div id="file-name-display" class="file-name-pill" style="display:none;"></div>
+            <!-- Dynamic Image Preview Component -->
+            <img id="image-preview" style="display: none; max-width: 100%; max-height: 250px; border-radius: 10px; margin: 0 auto; box-shadow: 0 5px 15px rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.2);">
+        </div>
+
+        <button type="submit" class="btn-primary analyze-btn"><i class="fa-solid fa-microscope"></i> Analyze Image</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const fileInput = document.getElementById('image');
+    const imagePreview = document.getElementById('image-preview');
+    const uploadPlaceholder = document.getElementById('upload-placeholder');
+    const dropZone = document.getElementById('drop-zone');
+
+    function handleFilePreview(file) {
+        if (!file) return;
+        
+        // Hide text completely
+        uploadPlaceholder.style.display = 'none';
+        dropZone.style.padding = '20px';
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            imagePreview.src = e.target.result;
+            imagePreview.style.display = 'block';
+        }
+        reader.readAsDataURL(file);
+    }
+
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover-active');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover-active');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover-active');
+        if(e.dataTransfer.files.length) {
+            fileInput.files = e.dataTransfer.files;
+            handleFilePreview(fileInput.files[0]);
+        }
+    });
+
+    fileInput.addEventListener('change', () => {
+        if(fileInput.files.length) {
+            handleFilePreview(fileInput.files[0]);
+        }
+    });
+</script>
+{% endblock %}
